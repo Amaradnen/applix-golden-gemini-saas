@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APPLIX | NFC Studio (Golden Gemini)</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter','sans-serif'],
+            display: ['Space Grotesk','sans-serif'],
+          },
+          colors: {
+            gg: {
+              black: '#050505',
+              panel: '#0B0B0B',
+              panel2: '#0F0F0F',
+              border: '#1C1C1C',
+              gold: '#E3B52E',
+              gold2: '#CFA31D',
+              ink: '#F4F4F4'
+            }
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.45s ease-out',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(18px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body{
+      background:
+        radial-gradient(900px 500px at 20% 0%, rgba(227,181,46,0.16), rgba(0,0,0,0) 60%),
+        radial-gradient(900px 500px at 80% 10%, rgba(227,181,46,0.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, #050505 0%, #020202 100%);
+      color: #F4F4F4;
+      overflow-x:hidden;
+    }
+
+    .glass{
+      background: rgba(12,12,12,0.76);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(227,181,46,0.10);
+    }
+
+    .gg-card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+      border: 1px solid rgba(227,181,46,0.10);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .gg-focus:focus{
+      outline: none;
+      border-color: rgba(227,181,46,0.55);
+      box-shadow: 0 0 0 3px rgba(227,181,46,0.12);
+    }
+
+    .perspective-container { perspective: 1000px; }
+
+    .card-3d-wrapper{
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.1s linear;
+      width: 400px;
+      height: 250px;
+    }
+    .card-3d-wrapper.flipping{ transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); }
+
+    .face{
+      position:absolute;
+      inset:0;
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      border-radius: 1rem;
+      overflow:hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+    }
+
+    .face-back{
+      transform: rotateY(180deg);
+      background: #0B0B0B;
+      border: 1px solid rgba(227,181,46,0.18);
+    }
+
+    .glare{
+      position:absolute;
+      width:100%;
+      height:100%;
+      top:0; left:0;
+      background: linear-gradient(125deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0) 100%);
+      pointer-events:none;
+      mix-blend-mode: overlay;
+      opacity: .9;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    [contenteditable="true"]{ cursor:text; }
+    [contenteditable="true"]:focus{ outline:none; }
+    .editable-pill{
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(227,181,46,0.18);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+
+    .mobile-frame{
+      width: 300px;
+      height: 600px;
+      border: 8px solid rgba(227,181,46,0.12);
+      border-radius: 40px;
+      overflow:hidden;
+      position:relative;
+      background:#000;
+      box-shadow: 0 22px 55px rgba(0,0,0,0.55);
+    }
+  </style>
+</head>
+
+<body class="font-sans antialiased selection:bg-gg-gold selection:text-black">
+  <nav class="fixed top-0 w-full z-50 glass h-20 flex items-center">
+    <div class="max-w-7xl mx-auto px-4 w-full flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+             style="background: radial-gradient(120% 120% at 20% 10%, rgba(227,181,46,0.55), rgba(227,181,46,0.05) 55%), #0B0B0B; border:1px solid rgba(227,181,46,0.22)">
+          <i data-lucide="layers" class="text-gg-ink w-6 h-6"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-xl font-display font-bold text-white leading-none tracking-wide">APPLIX</span>
+          <span class="text-[9px] text-gray-400 uppercase tracking-widest">NFC Studio • Golden Gemini</span>
+        </div>
+      </div>
+
+      <div class="hidden md:flex gap-4">
+        <div id="step-ind-1" class="text-xs font-bold text-gg-gold flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-gg-gold text-black flex items-center justify-center">1</span> Design Carte
+        </div>
+        <div class="w-8 h-px bg-white/10 my-auto"></div>
+        <div id="step-ind-2" class="text-xs font-bold text-gray-500 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-white/10 text-gray-400 flex items-center justify-center">2</span> Profil Digital
+        </div>
+        <div class="w-8 h-px bg-white/10 my-auto"></div>
+        <div id="step-ind-3" class="text-xs font-bold text-gray-500 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-white/10 text-gray-400 flex items-center justify-center">3</span> Commande
+        </div>
+      </div>
+
+      <button class="px-5 py-2 rounded-full font-bold text-sm hover:scale-105 transition shadow-lg"
+              style="background:linear-gradient(180deg,#E3B52E,#CFA31D); color:#090909;">
+        Support
+      </button>
+    </div>
+  </nav>
+
+  <main id="app-container" class="pt-32 pb-20 px-4 min-h-screen max-w-7xl mx-auto"></main>
+
+  <script>
+    const state = {
+      step: 1,
+      card: {
+        material: 'metal-black',
+        template: 'minimal',
+        customImage: null,
+        name: 'SAMI B.',
+        title: 'FOUNDER • APPLIX',
+        isFlipped: false
+      },
+      profile: {
+        template: 'creator',
+        image: null,
+        name: 'Sami B.',
+        bio: 'Tap my card to connect. Powered by APPLIX.',
+        links: []
+      }
+    };
+
+    const saved = localStorage.getItem('applix_state_gg');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        state.card = { ...state.card, ...parsed.card, isFlipped: false };
+        state.profile = { ...state.profile, ...parsed.profile };
+      } catch (e) { console.error('Save corrupted'); }
+    }
+
+    function saveState() {
+      localStorage.setItem('applix_state_gg', JSON.stringify({ card: state.card, profile: state.profile }));
+    }
+
+    const renderStep1 = () => `
+      <div class="grid lg:grid-cols-12 gap-12 animate-fade-in-up">
+        <div class="lg:col-span-5 space-y-8">
+          <div>
+            <h2 class="text-4xl font-display font-bold text-white mb-2">Design Physique</h2>
+            <p class="text-gray-400">Personnalisez votre carte NFC. Les champs texte sont <span class="text-gg-gold font-semibold">directement sur la carte</span> (cliquez pour éditer).</p>
+          </div>
+
+          <div class="gg-card p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-4">
+              <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Matériau</label>
+              <span class="text-[10px] px-2 py-0.5 rounded border"
+                    style="background:rgba(227,181,46,0.10); color:#E3B52E; border-color:rgba(227,181,46,0.25)">
+                Premium
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              ${materialBtn('metal-black','Métal Noir','from-gray-700 to-black')}
+              ${materialBtn('metal-gold','Métal Or','from-yellow-200 to-yellow-700')}
+              ${materialBtn('pvc-white','PVC Blanc','from-white to-white')}
+            </div>
+          </div>
+
+          <div class="gg-card p-6 rounded-2xl">
+            <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Layout</label>
+            <div class="mt-3 flex p-1 bg-white/5 rounded-lg border border-white/10">
+              ${tplBtn('minimal','Minimal')}
+              ${tplBtn('center','Centré')}
+              ${tplBtn('upload','Custom')}
+            </div>
+
+            <div class="mt-4 ${state.card.template === 'upload' ? 'block' : 'hidden'}">
+              <div class="border-2 border-dashed rounded-xl p-8 text-center transition cursor-pointer relative group"
+                   style="border-color:rgba(227,181,46,0.20); background:rgba(227,181,46,0.03)">
+                <input type="file" accept="image/*" onchange="handleCardUpload(this)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                <div class="group-hover:scale-110 transition duration-300">
+                  <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2" style="color:#E3B52E"></i>
+                </div>
+                <p class="text-sm font-bold text-white">Importer votre logo / design</p>
+                <p class="text-[10px] text-gray-400 mt-1">PNG transparent recommandé</p>
+              </div>
+            </div>
+
+            <div class="mt-5 text-xs text-gray-400">
+              Astuce : clique sur <span class="text-white font-semibold">Nom</span> ou <span class="text-white font-semibold">Titre</span> directement sur la carte pour modifier.
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button onclick="goToStep(2)" class="w-full py-4 font-bold rounded-xl transition flex items-center justify-center gap-2 group"
+                    style="background:linear-gradient(180deg,#E3B52E,#CFA31D); color:#0B0B0B; box-shadow: 0 0 24px rgba(227,181,46,0.18)">
+              Valider le Design <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 flex flex-col items-center justify-center gg-card rounded-3xl relative perspective-container" id="preview-container">
+          <div class="absolute top-6 right-6 flex gap-2 z-20">
+            <button onclick="toggleFlip()"
+                    class="px-4 py-2 rounded-full text-xs font-bold border flex items-center gap-2 backdrop-blur-md transition"
+                    style="background:rgba(0,0,0,0.45); border-color:rgba(227,181,46,0.20); color:#F4F4F4">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Retourner
+            </button>
+          </div>
+
+          <div id="card-obj" class="card-3d-wrapper shadow-2xl" onclick="toggleFlip()">
+            <div class="face face-front" style="background:${getCardBackground()}">
+              <div class="absolute inset-0 opacity-20 mix-blend-overlay"
+                   style="background-image:url('https://grainy-gradients.vercel.app/noise.svg')"></div>
+
+              <div class="absolute inset-0 p-8 flex flex-col justify-between z-10" id="card-front-content">
+                ${getCardContent()}
+              </div>
+
+              ${state.card.customImage && state.card.template === 'upload'
+                ? `<img src="${state.card.customImage}" class="absolute inset-0 w-full h-full object-cover z-0 grayscale opacity-90">`
+                : ''}
+
+              <div class="glare"></div>
+            </div>
+
+            <div class="face face-back flex items-center justify-between p-8 relative">
+              <div class="absolute inset-0 opacity-10"
+                   style="background-image:url('https://grainy-gradients.vercel.app/noise.svg')"></div>
+
+              <div class="z-10 text-left">
+                <div class="flex items-center gap-2 mb-2 opacity-70">
+                  <i data-lucide="layers" class="w-4 h-4" style="color:#E3B52E"></i>
+                  <span class="text-[10px] font-bold tracking-widest text-white">APPLIX ID</span>
+                </div>
+                <div class="text-xs text-gray-400 font-mono">SN: 8829-1029-EXP</div>
+              </div>
+
+              <div class="w-20 h-20 bg-white p-1 rounded z-10">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://applix.studio/u/${encodeURIComponent(state.card.name.replace(/\s/g,''))}"
+                     class="w-full h-full mix-blend-multiply">
+              </div>
+            </div>
+          </div>
+
+          <p class="absolute bottom-6 text-gray-500 text-[10px] uppercase tracking-widest">
+            Cliquez pour retourner • Bougez pour l'effet 3D • Cliquez sur le texte pour éditer
+          </p>
+        </div>
+      </div>
+    `;
+
+    const renderStep2 = () => `
+      <div class="grid lg:grid-cols-2 gap-12 animate-fade-in-up">
+        <div class="space-y-8">
+          <div>
+            <button onclick="goToStep(1)"
+                    class="text-xs text-gray-400 hover:text-white mb-4 flex items-center gap-1 hover:-translate-x-1 transition">
+              <i data-lucide="arrow-left" class="w-3 h-3"></i> Retour au Design
+            </button>
+            <h2 class="text-3xl font-display font-bold text-white mb-2">Profil Digital</h2>
+            <p class="text-gray-400">Configurez la page qui s'ouvre au scan de la carte.</p>
+          </div>
+
+          <div class="gg-card p-2 rounded-2xl flex gap-1 mb-2">
+            <button onclick="updateProfileTemplate('creator')"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${state.profile.template === 'creator' ? 'text-black' : 'text-gray-300 hover:bg-white/5'}"
+                    style="${state.profile.template === 'creator' ? 'background:linear-gradient(180deg,#E3B52E,#CFA31D);' : ''}">
+              <i data-lucide="user" class="w-4 h-4"></i> Créateur
+            </button>
+            <button onclick="updateProfileTemplate('business')"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${state.profile.template === 'business' ? 'text-black' : 'text-gray-300 hover:bg-white/5'}"
+                    style="${state.profile.template === 'business' ? 'background:linear-gradient(180deg,#E3B52E,#CFA31D);' : ''}">
+              <i data-lucide="briefcase" class="w-4 h-4"></i> Pro
+            </button>
+          </div>
+
+          <div class="gg-card p-6 rounded-2xl space-y-5">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 relative group cursor-pointer">
+                ${state.profile.image ? `<img src="${state.profile.image}" class="w-full h-full object-cover">`
+                                      : `<i data-lucide="camera" class="w-6 h-6 text-gray-400"></i>`}
+                <input type="file" onchange="handleProfileImage(this)" class="absolute inset-0 opacity-0 cursor-pointer">
+              </div>
+              <div class="flex-1">
+                <label class="text-xs text-gray-400 mb-1 block">Nom d'affichage</label>
+                <input type="text" value="${escapeHtml(state.profile.name)}"
+                       oninput="updateProfileData('name', this.value)"
+                       class="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-white gg-focus">
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">Bio</label>
+              <textarea oninput="updateProfileData('bio', this.value)"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white gg-focus h-24 resize-none">${escapeHtml(state.profile.bio)}</textarea>
+            </div>
+
+            <div class="border-t border-white/10 pt-4">
+              <label class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 block">Liens Rapides</label>
+              <div class="space-y-3">
+                <div class="flex gap-2">
+                  <div class="w-10 h-10 rounded bg-white/5 flex items-center justify-center border border-white/10">
+                    <i data-lucide="instagram" class="w-4 h-4" style="color:#E3B52E"></i>
+                  </div>
+                  <input type="text" placeholder="@username"
+                         class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 text-sm text-white gg-focus">
+                </div>
+                <div class="flex gap-2">
+                  <div class="w-10 h-10 rounded bg-white/5 flex items-center justify-center border border-white/10">
+                    <i data-lucide="globe" class="w-4 h-4" style="color:#E3B52E"></i>
+                  </div>
+                  <input type="text" placeholder="https://votre-site.com"
+                         class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 text-sm text-white gg-focus">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="goToStep(3)"
+                  class="w-full py-4 font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
+                  style="background:linear-gradient(180deg,#E3B52E,#CFA31D); color:#0B0B0B;">
+            Terminer la configuration <i data-lucide="check-circle" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-center gg-card rounded-3xl border border-white/5 p-8">
+          <div class="mobile-frame relative transition-transform duration-500 hover:scale-[1.02]">
+            <div class="w-full h-full bg-white overflow-y-auto hide-scrollbar scroll-smooth" id="mobile-screen">
+              ${getProfileContent()}
+            </div>
+            <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-7 bg-black rounded-full z-20 flex items-center justify-end px-3 gap-2">
+              <div class="w-1 h-1 rounded-full" style="background:#E3B52E"></div>
+              <div class="w-1 h-1 bg-white/20 rounded-full"></div>
+            </div>
+            <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-black/20 rounded-full z-20 mix-blend-multiply"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const renderStep3 = () => `
+      <div class="max-w-xl mx-auto animate-fade-in-up">
+        <div class="text-center mb-10">
+          <div class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border shadow-[0_0_30px_rgba(227,181,46,0.15)]"
+               style="background:rgba(227,181,46,0.10); border-color:rgba(227,181,46,0.25); color:#E3B52E">
+            <i data-lucide="sparkles" class="w-10 h-10"></i>
+          </div>
+          <h2 class="text-3xl font-display font-bold text-white mb-2">Prêt à imprimer !</h2>
+          <p class="text-gray-400">Votre carte NFC unique est configurée.</p>
+        </div>
+
+        <div class="gg-card rounded-2xl p-8 mb-8 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 blur-3xl rounded-full -mr-10 -mt-10"
+               style="background:rgba(227,181,46,0.18)"></div>
+
+          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Récapitulatif</h3>
+
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-10 rounded border border-white/10 shadow-sm" style="background:${getCardBackground()}"></div>
+              <div>
+                <h4 class="font-bold text-white">Carte NFC ${getMaterialName()}</h4>
+                <p class="text-xs text-gray-400">Gravure : ${escapeHtml(state.card.name)}</p>
+              </div>
+            </div>
+            <span class="font-bold text-white">89.00€</span>
+          </div>
+
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center border"
+                   style="background:rgba(227,181,46,0.12); border-color:rgba(227,181,46,0.22); color:#E3B52E">
+                <i data-lucide="smartphone" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-white">Profil Digital Premium</h4>
+                <p class="text-xs text-gray-400">Hébergement à vie inclus</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold px-2 py-1 rounded"
+                  style="color:#E3B52E; background:rgba(227,181,46,0.10); border:1px solid rgba(227,181,46,0.20)">
+              OFFERT
+            </span>
+          </div>
+
+          <div class="border-t border-dashed border-white/10 pt-4 flex justify-between items-center">
+            <span class="text-gray-400">Total à payer</span>
+            <span class="text-3xl font-display font-bold text-white">89.00€</span>
+          </div>
+        </div>
+
+        <button onclick="alert('Intégration Stripe ici...')"
+                class="w-full py-4 font-bold rounded-xl transition text-lg relative overflow-hidden group"
+                style="background:linear-gradient(180deg,#E3B52E,#CFA31D); color:#0B0B0B; box-shadow:0 10px 40px -10px rgba(227,181,46,0.45)">
+          <span class="relative z-10 flex items-center justify-center gap-2">
+            Commander maintenant <i data-lucide="credit-card" class="w-5 h-5"></i>
+          </span>
+        </button>
+
+        <div class="text-center mt-6">
+          <button onclick="goToStep(1)" class="text-xs text-gray-400 hover:text-white underline">Modifier le design</button>
+        </div>
+      </div>
+    `;
+
+    function escapeHtml(str){
+      return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
+    }
+
+    function materialBtn(key,label,grad){
+      const selected = state.card.material === key;
+      return `
+        <button onclick="updateCardMaterial('${key}')"
+                class="p-4 rounded-xl border bg-white/5 hover:border-white/20 transition group ${selected ? 'ring-2' : ''}"
+                style="${selected ? 'border-color:transparent; --tw-ring-color: rgba(227,181,46,0.75);' : 'border-color:rgba(255,255,255,0.08)'}">
+          <div class="w-full h-8 rounded mb-2 group-hover:scale-105 transition bg-gradient-to-br ${grad}"></div>
+          <span class="text-xs font-bold text-white">${label}</span>
+        </button>
+      `;
+    }
+
+    function tplBtn(id,label){
+      const active = state.card.template === id;
+      return `
+        <button onclick="updateCardTemplate('${id}')"
+                class="flex-1 py-2 rounded-md text-sm font-bold transition ${active ? '' : 'text-gray-400 hover:text-white'}"
+                style="${active ? 'background:rgba(227,181,46,0.12); color:#E3B52E; border:1px solid rgba(227,181,46,0.20);' : 'border:1px solid transparent'}">
+          ${label}
+        </button>
+      `;
+    }
+
+    function getCardBackground(){
+      if(state.card.material === 'metal-black'){
+        return 'radial-gradient(120% 120% at 20% 10%, rgba(227,181,46,0.22), rgba(0,0,0,0) 55%), linear-gradient(135deg, #111 0%, #000 100%)';
+      }
+      if(state.card.material === 'metal-gold'){
+        return 'linear-gradient(135deg, #F7D66A 0%, #CFA31D 100%)';
+      }
+      if(state.card.material === 'pvc-white'){
+        return '#ffffff';
+      }
+      return '#000';
+    }
+
+    function getMaterialName(){
+      if(state.card.material === 'metal-black') return 'Métal Noir';
+      if(state.card.material === 'metal-gold') return 'Métal Or';
+      return 'PVC Blanc';
+    }
+
+    function onInlineEdit(key, el){
+      const value = el.innerText.replace(/\n/g,' ').trim();
+      state.card[key] = value || (key === 'name' ? '—' : '');
+      saveState();
+      if(key === 'name'){
+        const qrImg = document.querySelector('.face-back img');
+        if(qrImg){
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://applix.studio/u/' + state.card.name.replace(/\s/g,''))}`;
+        }
+      }
+    }
+
+    function getCardContent(){
+      const isWhite = state.card.material === 'pvc-white';
+      const textColor = isWhite ? 'text-black' : 'text-white';
+      const iconColor = isWhite ? 'text-black' : 'text-white';
+      const pillBg = isWhite ? 'background:rgba(255,255,255,0.75); border-color:rgba(0,0,0,0.12);' : 'background:rgba(0,0,0,0.35); border-color:rgba(227,181,46,0.22);';
+
+      if(state.card.template === 'upload') return '';
+
+      if(state.card.template === 'center'){
+        return `
+          <div class="w-full h-full flex items-center justify-center flex-col rounded-lg"
+               style="border:1px solid ${isWhite ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.10)'}">
+            <i data-lucide="hexagon" class="w-12 h-12 ${iconColor} mb-3 opacity-90"></i>
+            <div class="editable-pill" style="${pillBg}">
+              <h3 class="font-display font-bold text-lg tracking-[0.2em] uppercase ${textColor}"
+                  contenteditable="true" spellcheck="false"
+                  oninput="onInlineEdit('name', this)">${escapeHtml(state.card.name)}</h3>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="flex justify-between items-start">
+          <i data-lucide="wifi" class="w-6 h-6 rotate-90 ${iconColor} opacity-50"></i>
+          <div class="w-9 h-6 rounded border relative overflow-hidden"
+               style="border-color:${isWhite ? 'rgba(0,0,0,0.20)' : 'rgba(227,181,46,0.28)'}">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full h-full"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="editable-pill inline-block" style="${pillBg}">
+            <h3 class="font-display font-bold text-xl tracking-wide ${textColor}"
+                contenteditable="true" spellcheck="false"
+                oninput="onInlineEdit('name', this)">${escapeHtml(state.card.name)}</h3>
+          </div>
+          <div class="editable-pill inline-block" style="${pillBg}">
+            <p class="text-[10px] uppercase tracking-widest ${textColor} opacity-80"
+               contenteditable="true" spellcheck="false"
+               oninput="onInlineEdit('title', this)">${escapeHtml(state.card.title)}</p>
+          </div>
+        </div>
+
+        <div class="absolute bottom-6 right-6 ${iconColor}">
+          <i data-lucide="nfc" class="w-8 h-8 opacity-80" style="${isWhite ? '' : 'color:#E3B52E'}"></i>
+        </div>
+      `;
+    }
+
+    function getProfileContent(){
+      const img = state.profile.image || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80';
+
+      if(state.profile.template === 'business'){
+        return `
+          <div class="min-h-full pb-10" style="background:#F5F5F5">
+            <div class="p-6 pb-10 shadow-sm relative overflow-hidden" style="background:#FFFFFF">
+              <div class="absolute top-0 right-0 w-32 h-32 rounded-full -mr-10 -mt-10" style="background:rgba(227,181,46,0.12)"></div>
+              <div class="flex items-center gap-4 relative z-10">
+                <img src="${img}" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md">
+                <div>
+                  <h2 class="font-bold text-xl" style="color:#111">${escapeHtml(state.profile.name)}</h2>
+                  <p class="text-xs font-medium inline-block px-2 py-1 rounded mt-1"
+                     style="color:#7A5A00; background:rgba(227,181,46,0.18)">Professional</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="px-4 -mt-6 relative z-20 space-y-3">
+              ${bizRow('phone','Mobile','+33 6 00 00 00 00')}
+              ${bizRow('mail','Email','contact@applix.studio')}
+              <button class="w-full py-4 font-bold rounded-xl mt-4" style="background:#111; color:#fff">Enregistrer le contact</button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="min-h-full text-white relative" style="background:#000">
+          <img src="${img}" class="w-full h-80 object-cover opacity-60">
+          <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/80 to-black"></div>
+
+          <div class="relative z-10 px-6 -mt-32 text-center">
+            <div class="w-28 h-28 mx-auto rounded-full border-2 p-1 mb-4 backdrop-blur-md"
+                 style="border-color:rgba(227,181,46,0.35); background:rgba(0,0,0,0.35)">
+              <img src="${img}" class="w-full h-full rounded-full object-cover">
+            </div>
+            <h2 class="text-3xl font-bold mb-2 font-display" style="color:#fff">${escapeHtml(state.profile.name)}</h2>
+            <p class="text-sm mb-8 leading-relaxed max-w-xs mx-auto" style="color:#BDBDBD">${escapeHtml(state.profile.bio)}</p>
+
+            <div class="space-y-3">
+              <a href="#" class="block w-full py-3.5 rounded-xl font-bold transition"
+                 style="background:linear-gradient(180deg,#E3B52E,#CFA31D); color:#0B0B0B">S'abonner</a>
+              <a href="#" class="block w-full py-3.5 rounded-xl font-bold border transition"
+                 style="background:rgba(255,255,255,0.10); border-color:rgba(227,181,46,0.22); color:#fff">Mon Site Web</a>
+            </div>
+
+            <div class="flex justify-center gap-6 mt-10" style="color:#A3A3A3">
+              <i data-lucide="instagram" class="w-6 h-6 hover:text-white transition cursor-pointer"></i>
+              <i data-lucide="twitter" class="w-6 h-6 hover:text-white transition cursor-pointer"></i>
+              <i data-lucide="globe" class="w-6 h-6 hover:text-white transition cursor-pointer"></i>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function bizRow(icon,label,value){
+      return `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:bg-gray-50">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:rgba(227,181,46,0.18); color:#7A5A00">
+            <i data-lucide="${icon}" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">${label}</p>
+            <p class="text-sm font-bold text-gray-800">${value}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function goToStep(stepNumber){
+      state.step = stepNumber;
+      render();
+      for(let i=1; i<=3; i++){
+        const el = document.getElementById(`step-ind-${i}`);
+        if(!el) continue;
+        if(i === stepNumber){
+          el.className = "text-xs font-bold text-gg-gold flex items-center gap-2";
+          el.children[0].className = "w-6 h-6 rounded-full bg-gg-gold text-black flex items-center justify-center";
+        } else {
+          el.className = "text-xs font-bold text-gray-500 flex items-center gap-2";
+          el.children[0].className = "w-6 h-6 rounded-full bg-white/10 text-gray-400 flex items-center justify-center";
+        }
+      }
+    }
+
+    function initTiltEffect(){
+      const container = document.getElementById('preview-container');
+      const card = document.getElementById('card-obj');
+      if(!container || !card) return;
+
+      container.addEventListener('mouseleave', () => {
+        if(state.card.isFlipped){
+          card.style.transform = `rotateY(180deg)`;
+        } else {
+          card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        }
+      });
+
+      container.addEventListener('mousemove', (e) => {
+        if(card.classList.contains('flipping')) return;
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const xPct = (x / rect.width - 0.5) * 2;
+        const yPct = (y / rect.height - 0.5) * 2;
+
+        const rotationStrength = 14;
+        const rotX = -yPct * rotationStrength;
+        const rotY = xPct * rotationStrength;
+
+        let baseRotateY = state.card.isFlipped ? 180 : 0;
+        card.style.transform = `rotateY(${baseRotateY + rotY}deg) rotateX(${rotX}deg)`;
+
+        const glare = document.querySelector('.glare');
+        if(glare){
+          glare.style.transform = `translate(${xPct * 50}px, ${yPct * 50}px)`;
+          glare.style.opacity = (0.55 - Math.abs(yPct*0.45)).toString();
+        }
+      });
+    }
+
+    function toggleFlip(){
+      state.card.isFlipped = !state.card.isFlipped;
+      const card = document.getElementById('card-obj');
+      if(!card) return;
+
+      card.classList.add('flipping');
+      card.style.transform = state.card.isFlipped ? `rotateY(180deg)` : `rotateY(0deg)`;
+      setTimeout(() => card.classList.remove('flipping'), 600);
+    }
+
+    function updateCardMaterial(mat){
+      state.card.material = mat;
+      state.card.template = 'minimal';
+      saveState();
+      render();
+    }
+
+    function updateCardTemplate(tpl){
+      state.card.template = tpl;
+      saveState();
+      render();
+    }
+
+    function handleCardUpload(input){
+      if(input.files && input.files[0]){
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          state.card.customImage = e.target.result;
+          state.card.template = 'upload';
+          saveState();
+          render();
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function updateProfileTemplate(tpl){
+      state.profile.template = tpl;
+      saveState();
+      render();
+    }
+
+    function updateProfileData(key,value){
+      state.profile[key] = value;
+      saveState();
+      const screen = document.getElementById('mobile-screen');
+      if(screen){
+        screen.innerHTML = getProfileContent();
+        lucide.createIcons();
+      }
+    }
+
+    function handleProfileImage(input){
+      if(input.files && input.files[0]){
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          state.profile.image = e.target.result;
+          saveState();
+          render();
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function render(){
+      const container = document.getElementById('app-container');
+      if(state.step === 1){
+        container.innerHTML = renderStep1();
+        setTimeout(initTiltEffect, 90);
+      }
+      if(state.step === 2) container.innerHTML = renderStep2();
+      if(state.step === 3) container.innerHTML = renderStep3();
+
+      lucide.createIcons();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => render());
+  </script>
+</body>
+</html>
