@@ -1,10 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-export default async function AdminOrdersPage({
-  searchParams,
-}: {
+export default async function AdminOrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   type SearchParams = { [key: string]: string | string[] | undefined };
-  export default function Page({ searchParams }: { searchParams?: SearchParams })
 }) {
   const token = typeof searchParams.token === "string" ? searchParams.token : "";
   if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
